@@ -5,6 +5,7 @@ import javafx.scene.Group;
 import javafx.scene.Scene;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
+import javafx.scene.control.PasswordField;
 import javafx.scene.control.TextField;
 import javafx.scene.layout.GridPane;
 import javafx.scene.layout.HBox;
@@ -19,30 +20,39 @@ import java.util.List;
 import java.util.Random;
 
 public class HangmanGame extends Application {
-    private List<String> words;
+    private static final List<String> WORDS = new ArrayList<>();
+    private static final int MAX_ERRORS = 6;
+
     private String secretWord;
-    private int maxErrors;
-    private int incorrectGuesses;
     private String guessedWord;
+    private int incorrectGuesses;
+    private String username;
     private int score;
 
     private Text guessedWordText;
-    private Text lettersGuessedText;
     private TextField letterInput;
     private Button guessButton;
     private Group hangmanContainer;
 
+    static {
+        WORDS.add("HANGMAN");
+        WORDS.add("APPLE");
+        WORDS.add("JAVA");
+        WORDS.add("COMPUTER");
+    }
+
+    public HangmanGame(String username, int score) {
+        this.username = username;
+        this.score = score;
+    }
+
     @Override
     public void start(Stage primaryStage) {
-        words = new ArrayList<>();
-        words.add("HANGMAN");
-        words.add("APPLE");
-        words.add("COMPUTER");
-        // Agrega más palabras aquí
-
-        maxErrors = 6;
-        score = 0;
+        incorrectGuesses = 0;
         guessedWord = "";
+
+        // Select a random secret word
+        secretWord = getRandomWord();
 
         // Hangman visual
         hangmanContainer = new Group();
@@ -50,10 +60,6 @@ public class HangmanGame extends Application {
         // Guessed word text
         guessedWordText = new Text();
         guessedWordText.setStyle("-fx-font-size: 20;");
-
-        // Letters guessed text
-        lettersGuessedText = new Text();
-        lettersGuessedText.setStyle("-fx-font-size: 16;");
 
         // Letter input field
         letterInput = new TextField();
@@ -63,40 +69,23 @@ public class HangmanGame extends Application {
         guessButton = new Button("Guess");
         guessButton.setOnAction(e -> handleGuess());
 
+        // Play Again button
+        Button playAgainButton = new Button("Play Again");
+        playAgainButton.setOnAction(e -> startNewGame());
+
         // Layout
         VBox root = new VBox(10);
         root.setAlignment(Pos.CENTER);
         root.setPadding(new Insets(20));
-        root.getChildren().addAll(hangmanContainer, guessedWordText, lettersGuessedText, createInputPane());
+        root.getChildren().addAll(hangmanContainer, guessedWordText, createInputPane(), playAgainButton);
 
-        Scene scene = new Scene(root, 400, 300);
+        Scene scene = new Scene(root, 400, 350);
         primaryStage.setTitle("Hangman Game");
         primaryStage.setScene(scene);
         primaryStage.show();
 
-        nextWord();
-    }
-
-    private void nextWord() {
-        if (words.isEmpty()) {
-            showMessage("Game Over! No more words to guess.");
-            showMessage("Final Score: " + score);
-            disableInput();
-            return;
-        }
-
-        Random random = new Random();
-        int index = random.nextInt(words.size());
-        secretWord = words.get(index).toUpperCase();
-        words.remove(index);
-
         initializeGuessedWord();
         updateGuessedWordText();
-        guessedWordText.setText(guessedWord);
-        lettersGuessedText.setText("");
-        incorrectGuesses = 0;
-        hangmanContainer.getChildren().clear();
-        enableInput();
     }
 
     private void handleGuess() {
@@ -126,7 +115,6 @@ public class HangmanGame extends Application {
             }
 
             updateGuessedWordText();
-            updateLettersGuessedText();
             checkGameStatus();
         }
     }
@@ -152,30 +140,13 @@ public class HangmanGame extends Application {
         guessedWordText.setText(sb.toString());
     }
 
-    private void updateLettersGuessedText() {
-        StringBuilder sb = new StringBuilder("Letters guessed: ");
-
-        for (char c = 'A'; c <= 'Z'; c++) {
-            if (guessedWord.contains(String.valueOf(c))) {
-                sb.append(c).append(" ");
-            }
-        }
-
-        lettersGuessedText.setText(sb.toString());
-    }
-
     private void checkGameStatus() {
         if (guessedWord.equals(secretWord)) {
-            showMessage("Congratulations! You guessed the word: " + secretWord);
-            score++;
-            showMessage("Score: " + score);
+            showMessage("Congratulations! You guessed the word!");
             disableInput();
-            nextWord();
-        } else if (incorrectGuesses == maxErrors) {
+        } else if (incorrectGuesses == MAX_ERRORS) {
             showMessage("Game Over! You reached the maximum number of incorrect guesses.");
-            showMessage("Score: " + score);
             disableInput();
-            nextWord();
         }
     }
 
@@ -188,11 +159,6 @@ public class HangmanGame extends Application {
     private void disableInput() {
         letterInput.setDisable(true);
         guessButton.setDisable(true);
-    }
-
-    private void enableInput() {
-        letterInput.setDisable(false);
-        guessButton.setDisable(false);
     }
 
     private void drawHangman() {
@@ -264,14 +230,27 @@ public class HangmanGame extends Application {
         return inputPane;
     }
 
+    private void startNewGame() {
+        secretWord = getRandomWord();
+        guessedWord = "";
+        incorrectGuesses = 0;
+        updateGuessedWordText();
+        hangmanContainer.getChildren().clear();
+        initializeGuessedWord();
+        enableInput();
+    }
+
+    private void enableInput() {
+        letterInput.setDisable(false);
+        guessButton.setDisable(false);
+    }
+
+    private String getRandomWord() {
+        Random random = new Random();
+        return WORDS.get(random.nextInt(WORDS.size()));
+    }
+
     public static void main(String[] args) {
         launch(args);
     }
 }
-
-
-
-
-
-
-

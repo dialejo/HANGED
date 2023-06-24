@@ -11,12 +11,16 @@ import javafx.scene.text.Font;
 import javafx.scene.text.TextAlignment;
 import javafx.stage.Stage;
 
-public class LoginWindow {
+import java.util.HashMap;
+import java.util.Map;
 
+public class LoginWindow {
     private Stage primaryStage;
+    private Map<String, Integer> playerScores;
 
     public LoginWindow(Stage primaryStage) {
         this.primaryStage = primaryStage;
+        this.playerScores = new HashMap<>();
     }
 
     public void show() {
@@ -41,18 +45,30 @@ public class LoginWindow {
             String username = usernameField.getText();
             String password = passwordField.getText();
             if (authenticateUser(username, password)) {
-                HangmanGame game = new HangmanGame();
+                int score = playerScores.getOrDefault(username, 0);
+                HangmanGame game = new HangmanGame(username, score);
                 game.start(primaryStage);
             } else {
                 showError("Invalid credentials. Please try again.");
             }
         });
 
+        Button registerButton = new Button("Register");
+        registerButton.setOnAction(e -> {
+            String username = usernameField.getText();
+            String password = passwordField.getText();
+            if (registerUser(username, password)) {
+                showInfo("User registered successfully. You can now login.");
+            } else {
+                showError("Username already exists. Please choose a different username.");
+            }
+        });
+
         VBox vbox = new VBox(10);
-        vbox.getChildren().addAll(titleLabel, usernameLabel, usernameField, passwordLabel, passwordField, loginButton);
+        vbox.getChildren().addAll(titleLabel, usernameLabel, usernameField, passwordLabel, passwordField, loginButton, registerButton);
         vbox.setAlignment(Pos.CENTER);
 
-        Scene scene = new Scene(vbox, 300, 200);
+        Scene scene = new Scene(vbox, 300, 250);
         primaryStage.setTitle("Hanged Game - Login");
         primaryStage.setScene(scene);
         primaryStage.show();
@@ -63,10 +79,28 @@ public class LoginWindow {
         System.out.println("Error: " + message);
     }
 
+    private void showInfo(String message) {
+        // Show information message to the user
+        System.out.println("Info: " + message);
+    }
+
     private boolean authenticateUser(String username, String password) {
         // Implement your authentication logic here
         // Return true if the credentials are valid, false otherwise
-        return username.equals("admin") && password.equals("password");
+        return playerScores.containsKey(username) && playerScores.get(username).equals(password.hashCode());
+    }
+
+    private boolean registerUser(String username, String password) {
+        // Implement your user registration logic here
+        // Return true if the user is registered successfully, false otherwise
+
+        // Check if the username already exists
+        if (playerScores.containsKey(username)) {
+            return false;
+        }
+
+        // Add the new user with the hashed password as the score
+        playerScores.put(username, password.hashCode());
+        return true;
     }
 }
-
